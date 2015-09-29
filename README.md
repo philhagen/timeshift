@@ -45,7 +45,7 @@ Jun  8 19:20:02 proxy sendmail[2300]: starting daemon (8.13.8): SMTP+queueing@01
 Jun  8 19:20:02 proxy sm-msp-queue[2308]: starting daemon (8.13.8): queueing@01:00:00
 ```
 
-Correct sendmail entries source file to account for the system's clock being 23 seconds fast
+Correct sendmail entries in source file to account for the system's clock being 23 seconds fast
 ```
 $ grep sendmail maillog | ./timeshift.py -o -23 -i second
 Jun  8 15:19:39 proxy sendmail[2295]: alias database /etc/aliases rebuilt by root
