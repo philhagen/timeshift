@@ -5,22 +5,24 @@ import argparse
 import re
 
 intervals = ('second', 'minute', 'hour', 'day')
+conversion_modes = ('syslog', 'httpdlog', 'rfc3339')
 curryear = date.today().year
 
-tzts_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[A-Za-z]{3}/[0-9]{4}):(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<offset_dir>[+-])(?P<offset>[0-9]{4}))')
 syslog_re = re.compile('(?P<datestring>(?P<date>[A-Za-z]{3} [0-9 ]{2}) (?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}))')
+httpd_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[A-Za-z]{3}/[0-9]{4}):(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<offset_dir>[+-])(?P<offset>[0-9]{4}))')
+rfc3339_re = re.compile('(?P<datestring>(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})T(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2})(?P<subsecond>\.[0-9]{6})(?P<offset_dir>[+-])(?P<offset>[0-9]{2}:[0-9]{2}))')
 
-parser = argparse.ArgumentParser(description='Shift the syslog date for all entries in an input data set by a specified interval of time.  Offset and interval options are required unless using --utcmode.')
-parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer)', type=int)
-parser.add_argument('-i', '--interval', help='Interval of time to shift', choices = intervals)
-parser.add_argument('-u', '--utcmode', help='Automatically parse timestamps such as "29/Aug/2013:23:46:33 -0400" to UTC', action='store_true', default=False)
+parser = argparse.ArgumentParser(description='Shift the syslog date for all entries in an input data set by a specified interval of time.  Offset and interval options are required when using syslog mode.')
+parser.add_argument('-m', '--mode', help='Type of timestamp to seek and adjust (default = syslog)', choices = conversion_modes, default='syslog')
+parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer, only required for "syslog" mode', type=int)
+parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" mode', choices = intervals)
 parser.add_argument('-y', '--year', help='Year to assume (default %d)' % curryear, default=curryear, type=int)
 parser.add_argument('-r', '--infile', help='Input file to process (default STDIN)')
 parser.add_argument('-w', '--outfile', help='Output file to create - will be overwritten if exists (default STDOUT)')
 args = parser.parse_args()
 
-if args.utcmode == None and (args.offset == None or args.interval == None):
-    stderr.write('ERROR: Offset and interval options are both required when not using --utcmode\n')
+if args.mode == 'syslog' and (args.offset == None or args.interval == None):
+    stderr.write('ERROR: Offset and interval options are both required when not using --mode syslog\n')
     sys.exit(2)
 
 # open the input file or use STDIN if not specified
@@ -45,8 +47,8 @@ else:
 
 # iterate through each line of the input data
 for line in infile:
-    if args.utcmode:
-        parts = tzts_re.search(line)
+    if args.mode == 'httpdlog':
+        parts = httpd_re.search(line)
 
         origtimestring = '%s %s' % (parts.group('date'), parts.group('time'))
         origtime = datetime.strptime(origtimestring, '%d/%b/%Y %X')
@@ -64,7 +66,26 @@ for line in infile:
             newtime = origtime + offset
 
         newtimestring = newtime.strftime('%d/%b/%Y:%X')
-        newline = tzts_re.sub(newtimestring+' +0000\0', line)
+        newline = httpd_re.sub(newtimestring+' +0000', line)
+
+    elif args.mode == 'rfc3339':
+        parts = rfc3339_re.search(line)
+
+        origtimestring = '%sT%s' % (parts.group('date'), parts.group('time'))
+        origtime = datetime.strptime(origtimestring, '%Y-%m-%dT%X')
+
+        offset_dir = parts.group('offset_dir')
+        (offset_hr, offset_min) = [ int(x) for x in parts.group('offset').split(':') ]
+        offset = timedelta(hours=offset_hr, minutes = offset_min)
+
+        # we are correcting the time zone to UTC, so the math is opposite the TZ direction
+        if offset_dir == '+':
+            newtime = origtime - offset
+        else:
+            newtime = origtime + offset
+
+        newtimestring = newtime.strftime('%Y-%M-%dT%X')
+        newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
 
     else:
         # establish a timedelta object that defines the requested offset and interval
@@ -90,7 +111,7 @@ for line in infile:
         # reconstruct the new line
         # the %-2d format string is a two-character wide format that omits any leading zeroes (uses space instead) - nice!
         newtimestring = newtime.strftime('%b %-2d %X')
-        newline = syslog_re.sub(newtimestring+'\0', line)
+        newline = syslog_re.sub(newtimestring, line)
 
         #'%s%s' % (newtime.strftime('%b %-2d %X'), remainder)
 
