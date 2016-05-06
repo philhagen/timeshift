@@ -84,7 +84,7 @@ for line in infile:
         else:
             newtime = origtime + offset
 
-        newtimestring = newtime.strftime('%Y-%M-%dT%X')
+        newtimestring = newtime.strftime('%Y-%m-%dT%X')
         newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
 
     else:
