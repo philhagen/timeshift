@@ -29,7 +29,8 @@ optional arguments:
                         Input file to process (default STDIN)
   -w OUTFILE, --outfile OUTFILE
                         Output file to create - will be overwritten if exists
-                        (default STDOUT)```
+                        (default STDOUT)
+```
 
 ### Example Usage
 Original contents of syslog file:
