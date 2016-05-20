@@ -1,5 +1,5 @@
-# syslog-timeshift
-A python script to shift the timestamp on syslog data. Useful for forensicators combating time skew.
+# timeshift
+A python script to shift the timestamp on syslog and httpd log data. Useful for forensicators combating time skew, time zones, and other such foolery.
 
 ## Usage
 
@@ -9,9 +9,8 @@ usage: timeshift.py [-h] [-m {syslog,httpdlog,rfc3339}] [-o OFFSET]
                     [-i {second,minute,hour,day}] [-y YEAR] [-r INFILE]
                     [-w OUTFILE]
 
-Shift the syslog date for all entries in an input data set by a specified
-interval of time. Offset and interval options are required when using syslog
-mode.
+Shift the date for all entries in an input data set by a specified interval
+of time. Offset and interval options are required when using syslog mode.
 
 optional arguments:
   -h, --help            show this help message and exit

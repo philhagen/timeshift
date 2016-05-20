@@ -12,7 +12,7 @@ syslog_re = re.compile('(?P<datestring>(?P<date>[A-Za-z]{3} [0-9 ]{2}) (?P<time>
 httpd_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[A-Za-z]{3}/[0-9]{4}):(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<offset_dir>[+-])(?P<offset>[0-9]{4}))')
 rfc3339_re = re.compile('(?P<datestring>(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})T(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2})(?P<subsecond>\.[0-9]{6})(?P<offset_dir>[+-])(?P<offset>[0-9]{2}:[0-9]{2}))')
 
-parser = argparse.ArgumentParser(description='Shift the syslog date for all entries in an input data set by a specified interval of time.  Offset and interval options are required when using syslog mode.')
+parser = argparse.ArgumentParser(description='Shift the date for all entries in an input data set by a specified interval of time. Offset and interval options are required when using syslog mode.')
 parser.add_argument('-m', '--mode', help='Type of timestamp to seek and adjust (default = syslog)', choices = conversion_modes, default='syslog')
 parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer, only required for "syslog" mode', type=int)
 parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" mode', choices = intervals)
