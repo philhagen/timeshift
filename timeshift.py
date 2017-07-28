@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# (C)2017 Lewes Technology Consulting, LLC
 import sys
 from datetime import datetime, timedelta, date
 import argparse
@@ -22,7 +23,7 @@ parser.add_argument('-w', '--outfile', help='Output file to create - will be ove
 args = parser.parse_args()
 
 if args.mode == 'syslog' and (args.offset == None or args.interval == None):
-    stderr.write('ERROR: Offset and interval options are both required when not using --mode syslog\n')
+    sys.stderr.write('ERROR: Offset and interval options are both required when not using --mode syslog\n')
     sys.exit(2)
 
 # open the input file or use STDIN if not specified
@@ -30,7 +31,7 @@ if args.infile:
     try:
         infile = open(args.infile, 'r')
     except IOError:
-        print 'Could not open input file'
+        sys.stderr.write('Could not open input file')
         exit(2)
 else:
     infile = sys.stdin
@@ -40,7 +41,7 @@ if args.outfile:
     try:
         outfile = open(args.outfile, 'w')
     except IOError:
-        print 'Could not open output file'
+        sys.stderr.write('Could not open output file')
         exit(2)
 else:
     outfile = sys.stdout
