@@ -93,7 +93,7 @@ for line in infile:
         if args.interval == 'second':
             offset = timedelta(seconds = args.offset)
         elif args.interval == 'minute':
-            offest = timedelta(minutes = args.offset)
+            offset = timedelta(minutes = args.offset)
         elif args.interval == 'hour':
             offset = timedelta(hours = args.offset)
         elif args.interval == 'day':
