@@ -23,8 +23,8 @@ parser.add_argument('-r', '--infile', help='Input file to process (default STDIN
 parser.add_argument('-w', '--outfile', help='Output file to create - will be overwritten if exists (default STDOUT)')
 args = parser.parse_args()
 
-if args.mode == 'syslog' and (args.offset == None or args.interval == None):
-    sys.stderr.write('ERROR: Offset and interval options are both required when not using --mode syslog\n')
+if (args.mode == 'syslog' or args.mode == 'cobaltstrike') and (args.offset == None or args.interval == None):
+    sys.stderr.write('ERROR: Offset and interval options are both required when not using --mode syslog or --mode cobaltstrike\n')
     sys.exit(2)
 
 # open the input file or use STDIN if not specified
