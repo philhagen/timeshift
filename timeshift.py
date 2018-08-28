@@ -52,43 +52,50 @@ for line in infile:
     if args.mode == 'httpdlog':
         parts = httpd_re.search(line)
 
-        origtimestring = '%s %s' % (parts.group('date'), parts.group('time'))
-        origtime = datetime.strptime(origtimestring, '%d/%b/%Y %X')
+        if parts != None:
+            origtimestring = '%s %s' % (parts.group('date'), parts.group('time'))
+            origtime = datetime.strptime(origtimestring, '%d/%b/%Y %X')
 
-        offset_dir = parts.group('offset_dir')
-        offset = parts.group('offset')
-        offset_hr = int(offset[0:2])
-        offset_min = int(offset[2:4])
-        offset = timedelta(hours=offset_hr, minutes = offset_min)
+            offset_dir = parts.group('offset_dir')
+            offset = parts.group('offset')
+            offset_hr = int(offset[0:2])
+            offset_min = int(offset[2:4])
+            offset = timedelta(hours=offset_hr, minutes = offset_min)
 
-        # we are correcting the time zone to UTC, so the math is opposite the TZ direction
-        if offset_dir == '+':
-            newtime = origtime - offset
+            # we are correcting the time zone to UTC, so the math is opposite the TZ direction
+            if offset_dir == '+':
+                newtime = origtime - offset
+            else:
+                newtime = origtime + offset
+
+            newtimestring = newtime.strftime('%d/%b/%Y:%X')
+            newline = httpd_re.sub(newtimestring+' +0000', line)
+
         else:
-            newtime = origtime + offset
-
-        newtimestring = newtime.strftime('%d/%b/%Y:%X')
-        newline = httpd_re.sub(newtimestring+' +0000', line)
+            newline = line
 
     elif args.mode == 'rfc3339':
         parts = rfc3339_re.search(line)
 
-        origtimestring = '%sT%s' % (parts.group('date'), parts.group('time'))
-        origtime = datetime.strptime(origtimestring, '%Y-%m-%dT%X')
+        if parts != None:
+            origtimestring = '%sT%s' % (parts.group('date'), parts.group('time'))
+            origtime = datetime.strptime(origtimestring, '%Y-%m-%dT%X')
 
-        offset_dir = parts.group('offset_dir')
-        (offset_hr, offset_min) = [ int(x) for x in parts.group('offset').split(':') ]
-        offset = timedelta(hours=offset_hr, minutes = offset_min)
+            offset_dir = parts.group('offset_dir')
+            (offset_hr, offset_min) = [ int(x) for x in parts.group('offset').split(':') ]
+            offset = timedelta(hours=offset_hr, minutes = offset_min)
 
-        # we are correcting the time zone to UTC, so the math is opposite the TZ direction
-        if offset_dir == '+':
-            newtime = origtime - offset
+            # we are correcting the time zone to UTC, so the math is opposite the TZ direction
+            if offset_dir == '+':
+                newtime = origtime - offset
+            else:
+                newtime = origtime + offset
+
+            newtimestring = newtime.strftime('%Y-%m-%dT%X')
+            newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
+
         else:
-            newtime = origtime + offset
-
-        newtimestring = newtime.strftime('%Y-%m-%dT%X')
-        newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
-
+            newline = line
 
     elif args.mode == 'cobaltstrike':
         # establish a timedelta object that defines the requested offset and interval
@@ -134,18 +141,22 @@ for line in infile:
         # then add a year, which may matter in a leap year
         parts = syslog_re.search(line)
 
-        origtimestring = '%s %s' % (parts.group('datestring'), args.year)
-        origtime = datetime.strptime(origtimestring, '%b %d %X %Y')
+        if parts != None:
+            origtimestring = '%s %s' % (parts.group('datestring'), args.year)
+            origtime = datetime.strptime(origtimestring, '%b %d %X %Y')
 
-        # calculate the new time in a time object
-        newtime = origtime + offset
+            # calculate the new time in a time object
+            newtime = origtime + offset
 
-        # reconstruct the new line
-        # the %-2d format string is a two-character wide format that omits any leading zeroes (uses space instead) - nice!
-        newtimestring = newtime.strftime('%b %-2d %X')
-        newline = syslog_re.sub(newtimestring, line)
+            # reconstruct the new line
+            # the %-2d format string is a two-character wide format that omits any leading zeroes (uses space instead) - nice!
+            newtimestring = newtime.strftime('%b %-2d %X')
+            newline = syslog_re.sub(newtimestring, line)
 
-        #'%s%s' % (newtime.strftime('%b %-2d %X'), remainder)
+            #'%s%s' % (newtime.strftime('%b %-2d %X'), remainder)
+
+        else:
+            newline = line
 
     # write the new line, including a formatted timestamp for the corrected time
     outfile.write(newline)
