@@ -1,22 +1,23 @@
 #!/usr/bin/python
-# (C)2017 Lewes Technology Consulting, LLC
+# (C)2018 Lewes Technology Consulting, LLC
 import sys
 from datetime import datetime, timedelta, date
 import argparse
 import re
 
 intervals = ('second', 'minute', 'hour', 'day')
-conversion_modes = ('syslog', 'httpdlog', 'rfc3339')
+conversion_modes = ('syslog', 'httpdlog', 'rfc3339', 'cobaltstrike')
 curryear = date.today().year
 
 syslog_re = re.compile('(?P<datestring>(?P<date>[A-Za-z]{3} [0-9 ]{2}) (?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}))')
 httpd_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[A-Za-z]{3}/[0-9]{4}):(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<offset_dir>[+-])(?P<offset>[0-9]{4}))')
 rfc3339_re = re.compile('(?P<datestring>(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})T(?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2})(?P<subsecond>\.[0-9]{6})(?P<offset_dir>[+-])(?P<offset>[0-9]{2}:[0-9]{2}))')
+cobaltstrike_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[0-9 ]{2}) (?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}))')
 
 parser = argparse.ArgumentParser(description='Shift the date for all entries in an input data set by a specified interval of time. Offset and interval options are required when using syslog mode.')
 parser.add_argument('-m', '--mode', help='Type of timestamp to seek and adjust (default = syslog)', choices = conversion_modes, default='syslog')
 parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer, only required for "syslog" mode', type=int)
-parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" mode', choices = intervals)
+parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" and "cobaltstrike" modes', choices = intervals)
 parser.add_argument('-y', '--year', help='Year to assume (default %d)' % curryear, default=curryear, type=int)
 parser.add_argument('-r', '--infile', help='Input file to process (default STDIN)')
 parser.add_argument('-w', '--outfile', help='Output file to create - will be overwritten if exists (default STDOUT)')
@@ -88,6 +89,36 @@ for line in infile:
         newtimestring = newtime.strftime('%Y-%m-%dT%X')
         newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
 
+
+    elif args.mode == 'cobaltstrike':
+        # establish a timedelta object that defines the requested offset and interval
+        if args.interval == 'second':
+            offset = timedelta(seconds = args.offset)
+        elif args.interval == 'minute':
+            offset = timedelta(minutes = args.offset)
+        elif args.interval == 'hour':
+            offset = timedelta(hours = args.offset)
+        elif args.interval == 'day':
+            offset = timedelta(hours = args.offset * 24)
+
+        # cobalt strike timestamps don't include a year.  add it.
+        parts = cobaltstrike_re.search(line)
+
+        if parts != None:
+            origtimestring = '%s/%s %s' % (parts.group('date'), args.year, parts.group('time'))
+            origtime = datetime.strptime(origtimestring, '%m/%d/%Y %X')
+
+            # calculate the new time in a time object
+            newtime = origtime + offset
+
+            # reconstruct the new line
+            newtimestring = newtime.strftime('%Y-%m-%dT%X')
+            newline = cobaltstrike_re.sub(newtimestring, line)
+
+        else:
+            newline = line
+
+    #assuming syslog format below!
     else:
         # establish a timedelta object that defines the requested offset and interval
         if args.interval == 'second':

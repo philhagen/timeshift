@@ -4,17 +4,17 @@ A python script to shift the timestamp on syslog and httpd log data. Useful for 
 ## Usage
 
 ```
-$ ./timeshift.py --help
-usage: timeshift.py [-h] [-m {syslog,httpdlog,rfc3339}] [-o OFFSET]
-                    [-i {second,minute,hour,day}] [-y YEAR] [-r INFILE]
-                    [-w OUTFILE]
+$ timeshift.py --help
+usage: timeshift.py [-h] [-m {syslog,httpdlog,rfc3339,cobaltstrike}]
+                    [-o OFFSET] [-i {second,minute,hour,day}] [-y YEAR]
+                    [-r INFILE] [-w OUTFILE]
 
-Shift the date for all entries in an input data set by a specified interval
-of time. Offset and interval options are required when using syslog mode.
+Shift the date for all entries in an input data set by a specified interval of
+time. Offset and interval options are required when using syslog mode.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -m {syslog,httpdlog,rfc3339}, --mode {syslog,httpdlog,rfc3339}
+  -m {syslog,httpdlog,rfc3339,cobaltstrike}, --mode {syslog,httpdlog,rfc3339,cobaltstrike}
                         Type of timestamp to seek and adjust (default =
                         syslog)
   -o OFFSET, --offset OFFSET
@@ -22,8 +22,8 @@ optional arguments:
                         required for "syslog" mode
   -i {second,minute,hour,day}, --interval {second,minute,hour,day}
                         Interval of time to shift (only required for "syslog"
-                        mode
-  -y YEAR, --year YEAR  Year to assume (default 2016)
+                        and "cobaltstrike" modes
+  -y YEAR, --year YEAR  Year to assume (default 2018)
   -r INFILE, --infile INFILE
                         Input file to process (default STDIN)
   -w OUTFILE, --outfile OUTFILE
@@ -99,4 +99,38 @@ $ ./timeshift.py -m rfc3339 -r messages
 <5>2016-05-06T04:12:09.649161+00:00 quaff kernel:[27198521.247228] Firewall-DENY_INPUT: IN=venet0 OUT= MAC= SRC=188.143.a.b DST=205.186.x.y LEN=40 TOS=0x00 PREC=0x00 TTL=54 ID=21112 DF PROTO=TCP SPT=43052 DPT=80 WINDOW=0 RES=0x00 RST URGP=0
 <5>2016-05-06T04:12:09.649163+00:00 quaff kernel:[27198521.247252] Firewall-DENY_INPUT: IN=venet0 OUT= MAC= SRC=188.143.a.b DST=205.186.x.y LEN=40 TOS=0x00 PREC=0x00 TTL=54 ID=21113 DF PROTO=TCP SPT=43052 DPT=80 WINDOW=0 RES=0x00 RST URGP=0
 <5>2016-05-06T04:12:09.649165+00:00 quaff kernel:[27198521.247273] Firewall-DENY_INPUT: IN=venet0 OUT= MAC= SRC=188.143.a.b DST=205.186.x.y LEN=40 TOS=0x00 PREC=0x00 TTL=54 ID=21114 DF PROTO=TCP SPT=43052 DPT=80 WINDOW=0 RES=0x00 RST URGP=0
+```
+
+Original contenst of Cobalt Strike log file:
+```
+$ cat cobaltstrike.txt
+08/23 21:38:35 [input] <user> download file.zip
+08/23 21:38:35 [task] Tasked beacon to download file.zip
+08/23 21:38:42 [checkin] host called home, sent: 37 bytes
+08/23 21:38:42 [output]
+started download of C:\Users\victim\Documents\file.zip (14892 bytes)
+
+08/23 21:38:42 [output]
+download of file.zip is complete
+
+08/23 21:39:40 [input] <user> ls 20180823
+08/23 21:39:40 [task] Tasked beacon to list files in 20180823
+08/23 21:39:43 [checkin] host called home, sent: 26 bytes
+```
+
+Assuming source file is reflected in EDT (UTC-0400), change to UTC (as it should be!):
+```
+$ timeshift.py -m cobaltstrike -o 4 -i hour -r cobaltstrike.txt
+2018-08-24T01:38:35 [input] <user> download file.zip
+2018-08-24T01:38:35 [task] Tasked beacon to download file.zip
+2018-08-24T01:38:42 [checkin] host called home, sent: 37 bytes
+2018-08-24T01:38:42 [output]
+started download of C:\Users\victim\Documents\file.zip (14892 bytes)
+
+2018-08-24T01:38:42 [output]
+download of file.zip is complete
+
+2018-08-24T01:39:40 [input] <user> ls 20180823
+2018-08-24T01:39:40 [task] Tasked beacon to list files in 20180823
+2018-08-24T01:39:43 [checkin] host called home, sent: 26 bytes
 ```
