@@ -16,8 +16,8 @@ cobaltstrike_re = re.compile('(?P<datestring>(?P<date>[0-9]{2}/[0-9 ]{2}) (?P<ti
 
 parser = argparse.ArgumentParser(description='Shift the date for all entries in an input data set by a specified interval of time. Offset and interval options are required when using syslog mode.')
 parser.add_argument('-m', '--mode', help='Type of timestamp to seek and adjust (default = syslog)', choices = conversion_modes, default='syslog')
-parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer, only required for "syslog" mode', type=int)
-parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" and "cobaltstrike" modes', choices = intervals)
+parser.add_argument('-o', '--offset', help='Amount of time to shift (pos/neg integer, only required for "syslog" mode)', type=int)
+parser.add_argument('-i', '--interval', help='Interval of time to shift (only required for "syslog" and "cobaltstrike" modes)', choices = intervals)
 parser.add_argument('-y', '--year', help='Year to assume (default %d)' % curryear, default=curryear, type=int)
 parser.add_argument('-r', '--infile', help='Input file to process (default STDIN)')
 parser.add_argument('-w', '--outfile', help='Output file to create - will be overwritten if exists (default STDOUT)')
