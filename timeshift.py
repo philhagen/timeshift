@@ -122,11 +122,8 @@ for line in infile:
                 offset = -offset
             newtime = origtime + offset
 
-            newtimestring = newtime.strftime('%d/%b/%Y:%X')
-            newline = httpd_re.sub(newtimestring+' +0000', line)
-
-        else:
-            newline = line
+            newtimestring = newtime.strftime('%d/%b/%Y:%X'+' +0000')
+            line = line.replace(parts.group('full_dts_string'), newtimestring)
 
     elif args.mode == 'rfc3339':
         parts = rfc3339_re.search(line)
@@ -144,11 +141,8 @@ for line in infile:
                 offset = -offset
             newtime = origtime + offset
 
-            newtimestring = newtime.strftime('%Y-%m-%dT%X')
-            newline = rfc3339_re.sub(newtimestring+parts.group('subsecond')+'+00:00', line)
-
-        else:
-            newline = line
+            newtimestring = newtime.strftime('%Y-%m-%dT%X'+parts.group('subsecond')+'+00:00')
+            line = line.replace(parts.group('full_dts_string'), newtimestring)
 
     elif args.mode == 'cobaltstrike':
         # establish a timedelta object that defines the requested offset and interval
@@ -173,10 +167,7 @@ for line in infile:
 
             # reconstruct the new line
             newtimestring = newtime.strftime('%Y-%m-%dT%X')
-            newline = cobaltstrike_re.sub(newtimestring, line)
-
-        else:
-            newline = line
+            line = line.replace(parts.group('full_dts_string'), newtimestring)
 
     elif args.mode == 'ual':
         # establish a timedelta object that defines the requested offset and interval
@@ -207,8 +198,6 @@ for line in infile:
                 
                 line = line.replace(parts.group('full_dts_string'), newtimestring)
 
-        newline = line
-
     #assuming syslog format below!
     else:
         # establish a timedelta object that defines the requested offset and interval
@@ -235,12 +224,9 @@ for line in infile:
             # reconstruct the new line
             # the %-2d format string is a two-character wide format that omits any leading zeroes (uses space instead) - nice!
             newtimestring = newtime.strftime('%b %-2d %X')
-            newline = syslog_re.sub(newtimestring, line)
+            line = line.replace(parts.group('full_dts_string'), newtimestring)
 
             #'%s%s' % (newtime.strftime('%b %-2d %X'), remainder)
 
-        else:
-            newline = line
-
     # write the new line, including a formatted timestamp for the corrected time
-    outfile.write(newline)
+    outfile.write(line)
